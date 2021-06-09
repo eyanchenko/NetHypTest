@@ -10,6 +10,8 @@ asym_cut <- function(n, K, p, alpha=0.05){
 
 emp.pval2 <- function(ts, A, nsim=200, null=c("ER", "CL", "LSM"), com_detect_alg = cluster_walktrap, ...){
   
+  require(igraph)
+  
   n = dim(A)[1]
   p.hat <- sum(A)/(n*(n-1))
   
@@ -28,9 +30,7 @@ emp.pval2 <- function(ts, A, nsim=200, null=c("ER", "CL", "LSM"), com_detect_alg
   
   for(sim in 1:nsim){
     if(null=="ER"){#Generate ER graph
-      A.hat = matrix(rbinom(n^2,1,p.hat), ncol=n)
-      A.hat[lower.tri(A.hat, diag = TRUE)] <- 0
-      A.hat = A.hat + base::t(A.hat)
+      A.hat = generateER(n, p.hat)
     }else if(null=="CL"){#Generate CL graph from degree nodes from A
       A.hat <- generateCLa(A)
     }else if(null=="LSM"){
