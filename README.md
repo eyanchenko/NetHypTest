@@ -17,8 +17,11 @@ asym.cut(n, K, p, alpha=0.05)
 Arguments
 
 n: number of nodes
+
 K: number of communities
+
 p: overall probability of edge in graph
+
 alpha: level of test
 
 
@@ -37,10 +40,15 @@ emp.pval(ts, A, nsim=200, null=c("ER", "CL", "LSM"), com_detect_alg = cluster_wa
 Arguments
 
 ts: test statistic
+
 A: adjacency matrix
+
 nsim: number of bootstrap simulations
+
 null: null distribution for bootstrap iterations (ER=Erdos-Renyi, CL=Chung-Lu, LSM=latent space model)
+
 com_detect_alg: community detection algorithm to be used during bootstrap iterations
+
 ...: extra parameters for the community detection algorithm
 
 ######################################################
@@ -58,6 +66,7 @@ generateER(n,p)
 Arguments
 
 n: number of nodes in the network
+
 p: probability of an edge between nodes
 
 ######################################################
@@ -91,8 +100,11 @@ generateLSM(n, d=1, beta, sigma2=1)
 Arguments
 
 n: number of nodes in the network
+
 d: dimension of latent space
+
 beta: parameter that controls the overall sparsity. Larger values means more sparse
+
 sigma2: variance parameter for generating latent positions
 
 
@@ -143,6 +155,7 @@ test.stat(adj, comm.det)
 Arguments
 
 adj: adjacency matrix
+
 comm.det: community labels
 
 ######################################################
