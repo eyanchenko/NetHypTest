@@ -60,7 +60,7 @@ spectral.pval <- function(A){
   P.hat <- p.hat - p.hat*diag(1,n)
   A.prime <- (A-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
   
-  princ.eigen <- eigs(A.prime,1)[[1]]
+  princ.eigen <- eigs_sym(A.prime,1,which="LA")[[1]]
   
   obs.stat <- n^(2/3)*(princ.eigen-2)
   return(ptw(obs.stat, beta=1, lower.tail = FALSE))
@@ -76,7 +76,7 @@ spectral.adj.pval <- function(A){
   P.hat <- p.hat - p.hat*diag(1,n)
   A.prime <- (A-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
   
-  princ.eigen <- eigs(A.prime,1)[[1]]
+  princ.eigen <- eigs_sym(A.prime,1,which="LA")[[1]]
   
   obs.stat <- n^(2/3)*(princ.eigen-2)
   
@@ -88,7 +88,7 @@ spectral.adj.pval <- function(A){
   for(i in 1:50){
     A.i <- generateER(n, p.hat)
     A.i.prime <- (A.i-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
-    princ.eigen.i <- eigs(A.i.prime,1)[[1]]
+    princ.eigen.i <- eigs_sym(A.i.prime,1,which="LA")[[1]]
     emp.stats[i] <- n^(2/3)*(princ.eigen.i-2)
   }
   
