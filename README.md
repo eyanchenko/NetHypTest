@@ -1,6 +1,6 @@
 # NetHypTest
 
-R code for implementing network homophily hypothesis testing based on methods proposed in the paper "A model-agnostic hypothesis test for community structure and homophily in networks" by Eric Yanchenko and Srijan Sengupta [ArXiv link]. Codes include functions to generate random graph models, asymptotic testing procedure, bootstrap testing procedure, Spectral and Spectral adjusted methods from Bickel and Sarkar (2016) and real-data examples. Please cite the paper if you use these codes.
+R code for implementing network homophily hypothesis testing based on methods proposed in the paper "A model-agnostic hypothesis test for community structure and homophily in networks" by Eric Yanchenko and Srijan Sengupta [https://arxiv.org/abs/2107.06093]. Codes include functions to generate random graph models, asymptotic testing procedure, bootstrap testing procedure, Spectral and Spectral adjusted methods from Bickel and Sarkar (2016) and real-data examples. Please cite the paper if you use these codes.
 
 ######################################################
 
