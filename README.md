@@ -4,7 +4,7 @@ R code for implementing network community detection hypothesis testing based on 
 
 ######################################################
 
-asym.cut
+asymp.cut
 
 Description
 
@@ -12,15 +12,15 @@ Asymptotic cutoff for the method in Yanchenko and Sengupta (2021+)
 
 Usage
 
-asym.cut(n, K, p)
+asym.cut(A, K, g0=0)
 
 Arguments
 
-n: number of nodes
+A: network
 
 K: number of communities
 
-p: overall probability of edge in graph
+g0: null value of E2D2 parameter
 
 
 ######################################################
@@ -33,7 +33,7 @@ Computes the p-value for the method in Yanchenko and Sengupta (2021+)
 
 Usage
 
-emp.pval(ts, A, nsim=200, null=c("ER", "CL"), com_detect_alg = cluster_walktrap, ...)
+emp.pval(ts, A, nsim=200, null=c("ER", "CL"), rn=1)
 
 Arguments
 
@@ -43,61 +43,76 @@ A: adjacency matrix
 
 nsim: number of bootstrap simulations
 
-null: null distribution for bootstrap iterations (ER=Erdos-Renyi, CL=Chung-Lu, LSM=latent space model)
+null: null distribution for bootstrap iterations (ER=Erdos-Renyi, CL=Chung-Lu)
 
-com_detect_alg: community detection algorithm to be used during bootstrap iterations
-
-...: extra parameters for the community detection algorithm
+rn: number of runs of greedy maximization algorithm
 
 ######################################################
 
-generateER
+greedy
 
 Description
 
-Generates a random graph from an Erdos-Renyi model 
+Finds labels and value of maximum of E2D2 parameter in Yanchenko and Sengupta (2021+)
 
 Usage
 
-generateER(n,p)
+greedy(A, K, runs=2, max.iter=100)
 
-Arguments
+A: adjacency matrix
 
-n: number of nodes in the network
+K: number of communities 
 
-p: probability of an edge between nodes
+runs: number of runs 
+
+max.iter: maximum number of iterations
 
 ######################################################
 
-generateCL
+generateDCBM
 
 Description
 
-Generates a random graph from a Chung-Lu model based on an existing adjacency matrix
+Generates a random graph from an Degree corrected block model with 2 blocks
 
 Usage
 
-generateCL(A)
+generateDCBM(theta, p11, p12, p22, prop=0.50)
 
 Arguments
 
-A: adjacency matrix from which to extract the degree distribution
+theta: degree parameters (length n=number of nodes)
+
+p11: probability of an edge between nodes in group 1
+
+p12: probabilty of an edge between nodes in group 1 and 2
+
+p22: probablity of an edge between nodes in group 2
+
+prop: proportion of nodes in group 1
 
 ######################################################
 
-generateLSM
+generateDCBMK
 
 Description
 
-Generates a random graph from a Latent Space Model
+Generates a random graph from an Degree corrected block model with K blocks
 
 Usage
 
-generateLSM(n, d=1, beta, sigma2=1)
+generateDCBMK(theta, pin, pout, props)
 
 Arguments
 
-n: number of nodes in the network
+theta: degree parameters (length n=number of nodes)
+
+pin: probability of an edge within a group
+
+pout: probabilty of an edge between groups
+
+prop: proportion of nodes in each group (length K=number of groups)
+ the network
 
 d: dimension of latent space
 
@@ -140,49 +155,16 @@ A: adjacency matrix
 
 ######################################################
 
-test.stat
-
-Description
-
-Computes the test statistic for the method in Yanchenko and Sengupta (2021+)
-
-Usage
-
-test.stat(adj, comm.det)
-
-Arguments
-
-adj: adjacency matrix
-
-comm.det: community labels
-
-######################################################
-
 Data sets
 
-Game of Thrones 
-
-Co-appearance data for Season 4 of Game of Thrones
 
 Hospital Encounters (Vanhems et. al 2013)
 
 Interactions between patients and workers in geriatric unit of French hospital
 
-Jazz (Gleiser and Danon 2003)
+DBLP (Gao et al., 2009 and Ji et al., 2010)
 
-Common musicians between jazz bands
-
-Karate (Zachary 1977)
-
-Social connection between members of a karate club
-
-Law Friends (Snijder et. al 2006)
-
-Friendships among attorneys at a law firm
-
-Political Blogs (Adamic and Glance 2005)
-
-Political blogs citation network
+Interactions between researchers at conferences for computer science
 
 
 
