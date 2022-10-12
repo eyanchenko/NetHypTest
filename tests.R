@@ -59,56 +59,6 @@ emp.pval2 <- function(ts, A, nsim, null=c("ER", "CL"), rn=1){
   return(pval)
 }
 
-spectral.pval <- function(A){
-  
-  require(RMTstat)
-
-  n=dim(A)[1]
-  p.hat <- sum(A)/(n*(n-1))
-  
-  P.hat <- p.hat - p.hat*diag(1,n)
-  A.prime <- (A-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
-  
-  princ.eigen <- eigs_sym(A.prime,1,which="LA")[[1]]
-  
-  obs.stat <- n^(2/3)*(princ.eigen-2)
-  return(ptw(obs.stat, beta=1, lower.tail = FALSE))
-}
-
-spectral.adj.pval <- function(A){
-
-  require(RMTstat)
-  
-  n=dim(A)[1]
-  p.hat <- sum(A)/(n*(n-1))
-  
-  P.hat <- p.hat - p.hat*diag(1,n)
-  A.prime <- (A-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
-  
-  princ.eigen <- eigs_sym(A.prime,1,which="LA")[[1]]
-  
-  obs.stat <- n^(2/3)*(princ.eigen-2)
-  
-  mu.tw <- -1.2065335745820 #from wikipedia
-  sigma.tw <- sqrt(1.607781034581) #from wikipedia
-  
-  emp.stats <- numeric(50)
-  
-  for(i in 1:50){
-    A.i <- generateER(n, p.hat)
-    A.i.prime <- (A.i-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
-    princ.eigen.i <- eigs_sym(A.i.prime,1,which="LA")[[1]]
-    emp.stats[i] <- n^(2/3)*(princ.eigen.i-2)
-  }
-  
-  mu.theta <- mean(emp.stats)
-  sigma.theta <- sqrt(var(emp.stats))
-  
-  theta.prime <- mu.tw + (obs.stat-mu.theta)/sigma.theta * sigma.tw
-  
-  return(ptw(theta.prime, beta=1, lower.tail = FALSE))
-}
-
 greedy <- function(A, K, runs=2, max.iter=100){
   
   n = dim(A)[1]
@@ -215,4 +165,54 @@ greedy <- function(A, K, runs=2, max.iter=100){
   
   return(list(e2d2=out[[keeper]][n+1], comm=out[[keeper]][1:n]))
   
+}
+
+spectral.pval <- function(A){
+  
+  require(RMTstat)
+
+  n=dim(A)[1]
+  p.hat <- sum(A)/(n*(n-1))
+  
+  P.hat <- p.hat - p.hat*diag(1,n)
+  A.prime <- (A-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
+  
+  princ.eigen <- eigs_sym(A.prime,1,which="LA")[[1]]
+  
+  obs.stat <- n^(2/3)*(princ.eigen-2)
+  return(ptw(obs.stat, beta=1, lower.tail = FALSE))
+}
+
+spectral.adj.pval <- function(A){
+
+  require(RMTstat)
+  
+  n=dim(A)[1]
+  p.hat <- sum(A)/(n*(n-1))
+  
+  P.hat <- p.hat - p.hat*diag(1,n)
+  A.prime <- (A-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
+  
+  princ.eigen <- eigs_sym(A.prime,1,which="LA")[[1]]
+  
+  obs.stat <- n^(2/3)*(princ.eigen-2)
+  
+  mu.tw <- -1.2065335745820 #from wikipedia
+  sigma.tw <- sqrt(1.607781034581) #from wikipedia
+  
+  emp.stats <- numeric(50)
+  
+  for(i in 1:50){
+    A.i <- generateER(n, p.hat)
+    A.i.prime <- (A.i-P.hat)/sqrt((n-1)*p.hat*(1-p.hat))
+    princ.eigen.i <- eigs_sym(A.i.prime,1,which="LA")[[1]]
+    emp.stats[i] <- n^(2/3)*(princ.eigen.i-2)
+  }
+  
+  mu.theta <- mean(emp.stats)
+  sigma.theta <- sqrt(var(emp.stats))
+  
+  theta.prime <- mu.tw + (obs.stat-mu.theta)/sigma.theta * sigma.tw
+  
+  return(ptw(theta.prime, beta=1, lower.tail = FALSE))
 }
