@@ -1,6 +1,6 @@
 # NetHypTest
 
-R code for implementing network homophily hypothesis testing based on methods proposed in the paper "A generalized hypothesis test for community structure and homophily in networks" by Eric Yanchenko and Srijan Sengupta [https://arxiv.org/abs/2107.06093]. Codes include functions to generate random graph models, asymptotic testing procedure, bootstrap testing procedure, Spectral and Spectral adjusted methods from Bickel and Sarkar (2016) and real-data examples. Please cite the paper if you use these codes.
+R code for implementing network community detection hypothesis testing based on methods proposed in the paper "A generalized hypothesis test for community structure in networks" by Eric Yanchenko and Srijan Sengupta [https://arxiv.org/abs/2107.06093]. Codes include functions to generate random graph models, asymptotic testing procedure, bootstrap testing procedure, Spectral and Spectral adjusted methods from Bickel and Sarkar (2016) and real-data examples. Please cite the paper if you use these codes.
 
 ######################################################
 
@@ -12,7 +12,7 @@ Asymptotic cutoff for the method in Yanchenko and Sengupta (2021+)
 
 Usage
 
-asym.cut(n, K, p, alpha=0.05)
+asym.cut(n, K, p)
 
 Arguments
 
@@ -21,8 +21,6 @@ n: number of nodes
 K: number of communities
 
 p: overall probability of edge in graph
-
-alpha: level of test
 
 
 ######################################################
@@ -35,7 +33,7 @@ Computes the p-value for the method in Yanchenko and Sengupta (2021+)
 
 Usage
 
-emp.pval(ts, A, nsim=200, null=c("ER", "CL", "LSM"), com_detect_alg = cluster_walktrap, ...)
+emp.pval(ts, A, nsim=200, null=c("ER", "CL"), com_detect_alg = cluster_walktrap, ...)
 
 Arguments
 
