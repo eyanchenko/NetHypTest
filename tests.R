@@ -1,51 +1,60 @@
-asym_cut <- function(n, K, p, alpha=0.05){
+asymp.cut <- function(A, K=2, g0=0){
+  n = dim(A)[1]
+  p.hat <- sum(A)/(n*(n-1))
+  eps = 0.0001
   
-  n.seq = seq(1,n,1)
+  cutoff = (g0 + (log(K)/n)^(1/2)/p.hat/K) * (1+eps)
   
-  logNnk <- sum(log(n.seq)) - log(factorial(K)/2) - K * sum(log(seq(1,n/K,1)))
-  
-  return( sqrt(8*(logNnk - log(alpha))/(n*(n-2))) / p )
+  return(cutoff)
   
 }
 
-emp.pval2 <- function(ts, A, nsim=200, null=c("ER", "CL", "LSM"), com_detect_alg = cluster_walktrap, ...){
+emp.pval2 <- function(ts, A, nsim, null=c("ER", "CL"), rn=1){
+  #ts to compute p-value for, from true fit
+  #A: observed adjacency matrix
+  #nsim: # iterations
+  #Null: What null hypothesis do you want to compare against?
+  #ER: Erdos-Renyi, CL: Chung-Lu
   
-  require(igraph)
+  if(ts <= -1){
+    warning("The observed test statistic corresponds to no communities.")
+    return(1)
+  }
   
   n = dim(A)[1]
   p.hat <- sum(A)/(n*(n-1))
   
-  #Only fit MLE once and then reuse Z and beta to generate new graphs
-  if(null=="LSM"){
-    #Estimate beta intercept
-    require(mvtnorm)
-    require(latentnet)
-    A.net <- as.network(A, directed=FALSE)
-    A.fit <- ergmm(A.net ~ euclidean(d=1), tofit="mle")
-    beta <- A.fit$mle$beta
-    sigma2 <- var(A.fit$mle$Z)
-  }
+  fit <- eigs(A, 1, which="LM")
+  theta.hat <- abs(as.numeric(fit$vectors * sqrt(fit$values)))
+  theta.hat[theta.hat > 1] <- 1
+  # theta.hat <- colSums(A)/sqrt(sum(A))
+  # theta.hat[theta.hat > 1] <- 1
   
-  pval = 0
   
-  for(sim in 1:nsim){
-    if(null=="ER"){#Generate ER graph
-      A.hat = generateER(n, p.hat)
-    }else if(null=="CL"){#Generate CL graph from degree nodes from A
-      A.hat <- generateCLa(A)
-    }else if(null=="LSM"){
-      A.hat <- generateLSM(n, d=1, beta, sigma2)
+  apply.fun <- function(i, nl){
+    if(nl=="ER"){#Generate ER graph
+      A.hat = generateDCBM(rep(1,n), p.hat, p.hat, p.hat)
+    }else if(nl=="CL"){#Generate CL graph from degree nodes from A
+      theta.boot <- sample(theta.hat, n, replace=T)
+      A.hat <- generateDCBM(theta.boot, 1, 1, 1)
     }
     
+    # Only keep largest connected component
     A.graph <- as.undirected(graph.adjacency(A.hat, mode="undirected"))
+    comps <- components(A.graph)
+    big_id <- which.max(comps$csize)
+    v_ids <- V(A.graph)[comps$membership == big_id]
+    A.graph <- induced_subgraph(A.graph, v_ids)
+    A.hat <- as.matrix(as_adjacency_matrix(A.graph))   
+    K <- length(cluster_fast_greedy(A.graph))
     
-    comm.det <- com_detect_alg(A.graph, ...)
-    
-    temp.stat <- test.stat(A.hat, comm.det)
-    
-    pval = pval + as.numeric(((temp.stat-ts)>=0))/nsim
-    
+    greedy(A.hat, K, runs=rn)$e2d2
   }
+  
+  emp.samp <- unlist(mclapply(1:nsim, apply.fun, nl=null, mc.cores = 6))
+  
+  
+  pval <- mean(emp.samp > ts)
   
   return(pval)
 }
@@ -100,32 +109,110 @@ spectral.adj.pval <- function(A){
   return(ptw(theta.prime, beta=1, lower.tail = FALSE))
 }
 
-test.stat2 <- function(adj, comm.det){
-  n = dim(adj)[1]
+greedy <- function(A, K, runs=2, max.iter=100){
   
-  K = length(comm.det)
+  n = dim(A)[1]
   
-  if (K == 1 || K == n) {
+  # Find max e2d2 and corresponding labels
+  apply.fun <- function(i){
+    # Initialize communities
+    comm = sample(1:K,n,replace=T)
+    comm_old = comm
     
-    return(-1)
+    # Community sizes
+    nc = numeric(K)
+    for(i in 1:K){nc[i] <- sum(comm==i)}
     
+    
+    # Initial values
+    M   = sum(A)/2
+    Xin = 0
+    for(i in 1:K){Xin = Xin + sum(A[comm==i, comm==i])/2}
+    Xout = M - Xin
+    
+    m   = 0.5*n*(n-1)
+    m_in = 0
+    for(i in 1:K){m_in = m_in + 0.5*nc[i]*(nc[i]-1)}
+    m_out = m - m_in
+    
+    e2d2 = Xin/m_in - Xout/m_out
+    
+    run = T
+    iter = 1
+    while(run && iter < max.iter){
+      run = F
+      # Randomize node order
+      node.order = sample(1:n)
+      for(i in node.order){
+        
+        #Find community neighbors of node i
+        neighs = sample(unique(comm[as.logical(A[i,])]))
+        e2d2_hold = numeric(length(neighs))
+        
+        # Compute change in e2d2 for all neighboring communities
+        Xlost = sum(A[i, comm==comm[i]])
+        m_in_lost = nc[comm[i]] - 1
+        
+        apply.fun2 <- function(j){
+          # Swap community of node i
+          Xin_i = Xin - Xlost + sum(A[i, comm==neighs[j]])
+          Xout_i = M - Xin_i
+          
+          m_in_i = m_in - m_in_lost + nc[neighs[j]] - 1*(neighs[j]==comm[i])
+          m_out_i = m - m_in_i
+          
+          return(Xin_i/m_in_i - Xout_i/m_out_i)
+        }
+        
+        e2d2_hold <- unlist(lapply(1:length(neighs), apply.fun2))
+        
+        # Swap node to whichever community yields largest e2d2 and update values
+        ck = neighs[which.max(e2d2_hold)]
+        
+        if(length(ck)==0){
+          ck = comm[i]
+        }
+        
+        Xin = Xin - Xlost + sum(A[i, comm==ck])
+        Xout = M - Xin
+        
+        m_in = m_in - m_in_lost + nc[ck] - 1*(ck==comm[i])
+        m_out = m - m_in
+        
+        e2d2 <-  Xin/m_in - Xout/m_out
+        nc[comm[i]] = nc[comm[i]] - 1
+        nc[ck]      = nc[ck] + 1
+        comm[i] <- ck
+        
+        
+        
+      }
+      
+      
+      
+      # Stop if no labels updated
+      if(sum(comm==comm_old) < n){
+        run = T
+        comm_old = comm
+      }
+      
+      iter = iter + 1
+      
+    }
+    
+    return(c(comm, e2d2/(M/(n*(n-1)/2))/K ))
   }
   
+  out <- lapply(1:runs, apply.fun)
   
-  P = choose(n,2)
-  P.in <- 0
-  for(i in 1:K){P.in = P.in + choose(length(comm.det[[i]]),2)} 
-  P.out = P-P.in
+  # Keep run with max e2d2
+  e2d2_vec <- numeric(runs)
+  for(i in 1:runs){
+    e2d2_vec[i] <- out[[i]][n+1]
+  }
   
-  m.in <- 0
-  for(i in 1:K){m.in = m.in + sum(adj[comm.det[[i]],comm.det[[i]]])/2}
-  m.out <- sum(adj)/2-m.in
+  keeper = which.max(e2d2_vec)
   
-  p.in <- m.in/P.in 
-  p.out <- m.out/P.out
-  
-  p.bar <- sum(adj)/(n*(n-1))
-    
-  return((p.in - p.out)/p.bar)
+  return(list(e2d2=out[[keeper]][n+1], comm=out[[keeper]][1:n]))
   
 }
